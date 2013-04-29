@@ -40,6 +40,20 @@
 #include "mtdutils/mounts.h"
 
 #include "nandroid.h"
+
+#include "miui/src/libs/iniparser/iniparser.h"
+
+dictionary * ini;
+
+int load_ors_settings()
+{
+    ini = iniparser_load("/sdcard/cotrecovery/settings.ini");
+    if (ini==NULL)
+        return 1;
+        
+    return 0;
+}
+
 static const struct option OPTIONS[] = {
   { "send_intent", required_argument, NULL, 's' },
   { "update_package", required_argument, NULL, 'u' },
@@ -625,6 +639,17 @@ int check_for_script_file(void) {
 }
 
 int run_script_file(void) {
+    int forcereboot;
+    int wipeprompt;
+    miuiIntent_send(INTENT_MOUNT, 1, "/sdcard");
+    if (1==load_ors_settings()) {
+        return 1;
+    }
+    
+    forcereboot = iniparser_getboolean(ini, "ors:forcereboots", -1);
+    wipeprompt = iniparser_getboolean(ini, "ors:wipeprompt", -1);
+    iniparser_freedict(ini);
+    
     FILE *fp = fopen(SCRIPT_FILE_TMP, "r");
     struct stat st;
     int ret_val = 0, cindex, line_len, i, remove_nl;
@@ -682,12 +707,32 @@ int run_script_file(void) {
                 }
 			} else if (strcmp(command, "wipe") == 0) {
 				// Wipe
+                //if (wipeprompt == 1) {
+                    
 				if (strcmp(value, "cache") == 0 || strcmp(value, "/cache") == 0) {
-					miuiIntent_send(INTENT_WIPE, 1, "/cache");
+                    if (wipeprompt == 1) {
+                        if (RET_YES == miui_confirm(3, "Partition Wipe", "Are you sure you want to wipe /cache?", "@wipe")) {
+                            miuiIntent_send(INTENT_WIPE, 1, "/cache");
+                        }
+                    } else {
+                        miuiIntent_send(INTENT_WIPE, 1, "/cache");
+                    }
 				} else if (strcmp(value, "dalvik") == 0 || strcmp(value, "dalvick") == 0 || strcmp(value, "dalvikcache") == 0 || strcmp(value, "dalvickcache") == 0) {
-					miuiIntent_send(INTENT_WIPE, 1, "dalvik-cache");
+					if (wipeprompt == 1) {
+                        if (RET_YES == miui_confirm(3, "Partition Wipe", "Are you sure you want to wipe dalvik-cache?", "@wipe")) {
+                            miuiIntent_send(INTENT_WIPE, 1, "dalvik-cache");
+                        }
+                    } else {
+                        miuiIntent_send(INTENT_WIPE, 1, "dalvik-cache");
+                    }
 				} else if (strcmp(value, "data") == 0 || strcmp(value, "/data") == 0 || strcmp(value, "factory") == 0 || strcmp(value, "factoryreset") == 0) {
-					miuiIntent_send(INTENT_WIPE, 1, "/data");
+					if (wipeprompt == 1) {
+                        if (RET_YES == miui_confirm(3, "Partition Wipe", "Are you sure you want to wipe /data?", "@wipe")) {
+                            miuiIntent_send(INTENT_WIPE, 1, "/data");
+                        }
+                    } else {
+                        miuiIntent_send(INTENT_WIPE, 1, "/data");
+                    }
 				} else {
 					LOGE("Error with wipe command value: '%s'\n", value);
 					ret_val = 1;
@@ -798,6 +843,9 @@ int run_script_file(void) {
 		}
 		fclose(fp);
 		ui_print("Done processing script file\n");
+        if (forcereboot == 1) {
+            miuiIntent_send(INTENT_REBOOT, 1, "reboot");
+        }
 	} else {
 		LOGE("Error opening script file '%s'\n");
 		return 1;
