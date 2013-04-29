@@ -673,7 +673,13 @@ int run_script_file(void) {
 			}
 			if (strcmp(command, "install") == 0) {
 				// Install zip
-				miuiIntent_send(INTENT_INSTALL, 3, value, "0", "1");
+                char full_path[SCRIPT_COMMAND_SIZE];
+                if (value[0] != '/') {
+                    sprintf(full_path, "%s/%s", "/sdcard", value);
+                    miuiIntent_send(INTENT_INSTALL, 3, full_path, "0", "1");
+                } else {
+                    miuiIntent_send(INTENT_INSTALL, 3, value, "0", "1");
+                }
 			} else if (strcmp(command, "wipe") == 0) {
 				// Wipe
 				if (strcmp(value, "cache") == 0 || strcmp(value, "/cache") == 0) {
