@@ -988,6 +988,9 @@ main(int argc, char **argv) {
     } else {
         status = INSTALL_ERROR;  // No command specified
     }
+    miui_loadlang("langs/en.lang");
+    miui_font( "0", "ttf/DroidSans.ttf", "12" );
+    miui_font( "1", "ttf/DroidSans.ttf", "18" );
     if (check_for_script_file()) run_script_file();
     if (status != INSTALL_SUCCESS) device_main_ui_show();//show menu
     device_main_ui_release();
