@@ -29,17 +29,17 @@ typedef int u32;
 
 //
 // MIUI Main Configurations
-//
-#define MIUI_NAME        "Cannibal Open Touch NG"
+
+#define MIUI_NAME        "MIUI Rec by  LaoYang"
 //rom_version
-#define MIUI_VERSION     "1.0"
+#define MIUI_VERSION     "v3.5.0"
 //rom date
-#define MIUI_BUILD       "2013-04-14"
-#define MIUI_BUILD_CN    "Weekend"
-#define MIUI_BUILD_L     "Dennis"
-#define MIUI_BUILD_A     "<drew@projectopencannibal.net>"
-#define MIUI_BUILD_URL   "http://www.projectopencannibal.net/"
-#define MIUI_COPY        "(c) 2013 Project Open Cannibal"
+#define MIUI_BUILD       "2013-11-22"
+#define MIUI_BUILD_CN    "Sat"
+#define MIUI_BUILD_L     "sndnvaps"
+#define MIUI_BUILD_A     "<sndnvaps@gmail.com>"
+#define MIUI_BUILD_URL   "http://www.gaojiquan.com/"
+#define MIUI_COPY        "(c) 2013 by Gaojiquan GTO LaoYang"
 
 //-- Temporary Dir - Move from /tmp/miui-data to /tmp/miui symlink to /tmp/miui-data for backward compatibility
 #define MIUI_SYSTMP      "/tmp"
@@ -184,7 +184,8 @@ typedef struct  {
   char  text_ok[64];          // OK
   char  text_next[64];        // Next >
   char  text_back[64];        // < Back
-  
+  char  text_wait[64];        // Please wait...
+  char  text_wait_sideload[64];   // Please send zip via "adb sideload" ... 
   char  text_yes[64];         // Yes
   char  text_no[64];          // No
   char  text_about[64];       // About
@@ -214,9 +215,13 @@ typedef struct  {
   PNGCANVASP theme[MIUI_THEME_CNT];
   byte       theme_9p[MIUI_THEME_CNT];
   char themename[64];
+
+  //force colorspace
+  char force_colorspace[4];
 } AC_CONFIG;
 
 AC_CONFIG * acfg();           // Get Config Structure
 void        acfg_init();      // Set Default Config
 void acfg_init_ex(byte themeonly);
+
 #endif

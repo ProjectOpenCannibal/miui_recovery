@@ -15,7 +15,7 @@ typedef int STATUS;
 #define ICON_ENABLE   "@enable"
 #define ICON_DISABLE  "@disable"
 //MAX_MENU_
-#define ITEM_COUNT 128
+#define ITEM_COUNT 256
 #define MENU_BACK ITEM_COUNT 
 #define MENU_QUIT ITEM_COUNT + 1
 
@@ -175,6 +175,11 @@ int miui_ui_config(const char * file);
 STATUS miui_ui_start();
 STATUS miui_ui_end();
 
+// adb sideload
+//
+STATUS miui_sideload_process();
+
+
 
 #define assert_ui_if_fail(p) if(!(p)) { \
     miui_alert(2, "<~alert.result>", "<~alert.desc>");}
@@ -212,9 +217,11 @@ struct _menuUnit* wipe_ui_init();
 //backup_ui.c
 struct _menuUnit* backup_ui_init();
 //tool_ui.c
-struct _menuUnit* tool_ui_init();
+//struct _menuUnit* tool_ui_init();
 //info_ui.c
 struct _menuUnit* info_ui_init();
+//root_ui.c
+struct _menuUnit* root_ui_init();
 //miui.c
 extern struct _menuUnit* g_main_menu;
 extern struct _menuUnit* g_root_menu;
@@ -229,7 +236,7 @@ STATUS miui_set_isbgredraw(int value);
  *@DESCRIPTION:make install pacage, be invoked by installer
  */
 
-typedef int (*miuiInstall_fun)(char* path, int *wipe_cache, char* install_file);
+typedef int (*miuiInstall_fun)(const char* path);
 typedef struct _miuiInstall {
     miuiInstall_fun pfun;
     char *path;
@@ -237,7 +244,7 @@ typedef struct _miuiInstall {
     int wipe_cache;
 }miuiInstall, *pmiuiInstall;
 //for install init 
-STATUS miuiInstall_init(miuiInstall_fun fun, char *path, int wipe_cache, char* install_file);
+STATUS miuiInstall_init(miuiInstall_fun fun, char *path);
 
 void miuiInstall_show_progress(float portion, int seconds);
 void miuiInstall_set_progress(float fraction);

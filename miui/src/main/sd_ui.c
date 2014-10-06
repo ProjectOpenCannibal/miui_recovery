@@ -9,11 +9,6 @@
 #include "../miui_inter.h"
 #include "../miui.h"
 #include "../../../miui_intent.h"
-
-#include "../libs/iniparser/iniparser.h"
-
-dictionary * ini;
-
 /*
  *_sd_show_dir show file system on screen
  *return MENU_BACK when pree backmenu
@@ -23,37 +18,33 @@ dictionary * ini;
 //callback function , success return 0, non-zero fail
 int file_install(char *file_name, int file_len, void *data)
 {
-    char path_name[PATH_MAX];
-    static time_t timep;
-    static struct tm *time_tm;
-    time(&timep);
-    time_tm = gmtime(&timep);
     return_val_if_fail(file_name != NULL, RET_FAIL);
     return_val_if_fail(strlen(file_name) <= file_len, RET_INVALID_ARG);
     return_val_if_fail(data != NULL, RET_FAIL);
+#ifdef DUALSYSTEM_PARTITIONS
+     int choose_system_num;
+     if (is_tdb_enabled()) {
+         if (RET_YES == miui_confirm(5, "<~choose.system.title>", "<~choose.system.text>", "@alert", "<~choice.system0.name>", "<~choice.system1.name>")) {
+             miuiIntent_send(INTENT_SETSYSTEM,1,"1");
+         } else {
+             miuiIntent_send(INTENT_SETSYSTEM,1,"2");
+         }
+     
+     }
+#endif
+
     struct _menuUnit *p = (pmenuUnit)data;
     if (RET_YES == miui_confirm(3, p->name, p->desc, p->icon)) {
-        int currstatus;
-        if (1==load_cotsettings()) {
-            return -1;
-        }
-        
-        currstatus = iniparser_getboolean(ini, "zipflash:backupprompt", -1);
-        iniparser_freedict(ini);
-        
-        if (currstatus == 1) {
-            if (RET_YES == miui_confirm(3, p->name, "Would you like to make a backup first?", p->icon)) {
-                snprintf(path_name,PATH_MAX, "%s/backup/backup/%02d%02d%02d-%02d%02d",
-                        RECOVERY_PATH, time_tm->tm_year,
-                        time_tm->tm_mon + 1, time_tm->tm_mday, time_tm->tm_hour, time_tm->tm_min);
-                miui_busy_process();
-                miuiIntent_send(INTENT_BACKUP, 1, path_name);
-            }
-        }
-        miuiIntent_send(INTENT_INSTALL, 3, file_name, "0", "1");
+        miuiIntent_send(INTENT_INSTALL, 1, file_name);
+miuiIntent_send(INTENT_SETSYSTEM,1,"0");
         return 0;
     }
-    else return -1;
+      else {
+        miuiIntent_send(INTENT_SETSYSTEM,1,"0");
+      return -1;
+    }
+
+     return -1; //set default return 
 }
 //callback funtion file filter, if access ,return 0; others return -1
 int file_filter(char *file, int file_len)
@@ -89,13 +80,40 @@ static STATUS sdext_menu_show(menuUnit *p)
     if (ret == -1) return MENU_BACK;
     return ret;
 }
+
+//add by sndnvaps@gmail.com 2013/4/11 11:29:35 
+static STATUS sdinternal_menu_show(menuUnit *p) 
+{
+        // ensure_mounte internal_sd path
+    struct _intentResult* result = miuiIntent_send(INTENT_MOUNT, 1, "/internal_sd");
+            //whatever wether internal sdcare is mounted, scan sdcard and go on 
+//assert_if_fail(miuiIntent_result_get_init() == 0);
+         int ret;
+         ret = file_scan("/internal_sd", sizeof("/internal_sd"), p->name, strlen(p->name), &file_install, (void *)p, &file_filter);
+        if (ret == -1) return MENU_BACK;
+        return ret;
+}
+
 static STATUS sd_update_show(menuUnit *p)
 {
     char new_path[SD_MAX_PATH] = "/sdcard/update.zip";
     int wipe_cache = 0;
+#ifdef DUALSYSTEM_PARTITIONS
+     int choose_system_num;
+     if (is_tdb_enabled()) {
+         if (RET_YES == miui_confirm(5, "<~choose.system.title>", "<~choose.system.text>", "@alert", "<~choice.system0.name>", "<~choice.system1.name>")) {
+             miuiIntent_send(INTENT_SETSYSTEM,1,"1");
+         } else {
+             miuiIntent_send(INTENT_SETSYSTEM,1,"2");
+         }
+     
+     }
+#endif
+
     if (RET_YES == miui_confirm(3, p->name, p->desc, p->icon)) {
-        miuiIntent_send(INTENT_INSTALL, 3, new_path, "0", "1");
+        miuiIntent_send(INTENT_INSTALL, 1, new_path);
     }
+    miuiIntent_send(INTENT_SETSYSTEM,1,"0");
     return MENU_BACK;
 }
 struct _menuUnit * sd_ui_init()
@@ -130,5 +148,7 @@ struct _menuUnit * sd_ui_init()
         temp->show = &sdext_menu_show;
         assert_if_fail(menuNode_add(p, temp) == RET_OK);
     }
+
     return p;
 }
+

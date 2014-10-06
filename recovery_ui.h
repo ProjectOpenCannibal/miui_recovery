@@ -19,6 +19,10 @@
 
 #include "common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //init ui 
 extern void device_ui_init() ;
 //start ui?
@@ -88,5 +92,9 @@ extern char* MENU_HEADERS[];
 
 // Text of menu items.
 extern char* MENU_ITEMS[];
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

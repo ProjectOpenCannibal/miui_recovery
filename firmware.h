@@ -17,6 +17,10 @@
 #ifndef _RECOVERY_FIRMWARE_H
 #define _RECOVERY_FIRMWARE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Save a radio or bootloader update image for later installation.
  * The type should be one of "hboot" or "radio".
  * Takes ownership of type and data.  Returns nonzero on error.
@@ -31,5 +35,9 @@ int firmware_update_pending();
  * doesn't return at all on success...
  */
 int maybe_install_firmware_update(const char *send_intent);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -519,11 +519,11 @@
 
 #ifndef PNG_VERSION_INFO_ONLY
 /* Include the compression library's header */
-#include <zlib.h>
+#include "zlib.h"
 #endif
 
 /* Include all user configurable info, including optional assembler routines */
-#include <pngconf.h>
+#include "pngconf.h"
 
 /*
  * Added at libpng-1.2.8 */

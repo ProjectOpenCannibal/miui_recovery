@@ -23,10 +23,6 @@
 #include <sched.h>
 #include "../miui_inter.h"
 
-#ifndef BOARD_LCD_BRIGHTNESS_FILE
-#define BOARD_LCD_BRIGHTNESS_FILE "/sys/class/leds/lcd-backlight/brightness"
-#endif
-
 /***************************[ GLOBAL VARIABLES ]**************************/
 static AC_CONFIG acfg_var;
 static byte      on_dialog_window = 0;
@@ -99,10 +95,9 @@ void acfg_init_ex(byte themeonly){
 
   snprintf(acfg_var.rom_name,128,MIUI_NAME);
   snprintf(acfg_var.rom_version,128,MIUI_VERSION);
-  snprintf(acfg_var.rom_author,128,MIUI_BUILD_A);
   snprintf(acfg_var.rom_device,128,"Not Defined");
   snprintf(acfg_var.rom_date,128,MIUI_BUILD);
-  snprintf(acfg_var.brightness_path, PATH_MAX, BOARD_LCD_BRIGHTNESS_FILE);
+  snprintf(acfg_var.brightness_path, PATH_MAX, "/sys/class/leds/lcd-backlight/brightness");
   memset(acfg_var.lun_file, 0x00, PATH_MAX);
 
 

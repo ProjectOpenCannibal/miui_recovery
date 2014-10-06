@@ -18,10 +18,28 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES := \
 	Retouch.c
 
-LOCAL_C_INCLUDES += src
+LOCAL_C_INCLUDES += bootable/recovery
 
 LOCAL_MODULE := libminelf
 
 LOCAL_CFLAGS += -Wall
 
+include $(BUILD_SHARED_LIBRARY)
+
+
+#static library for updater 
+include $(CLEAR_VARS)
+
+LOCAL_SRC_FILES := \
+	Retouch.c
+
+LOCAL_C_INCLUDES += bootable/recovery
+
+LOCAL_MODULE := libminelf_static
+
+LOCAL_CFLAGS += -Wall
+
 include $(BUILD_STATIC_LIBRARY)
+
+
+

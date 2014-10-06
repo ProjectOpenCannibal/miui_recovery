@@ -29,15 +29,18 @@
 //
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <math.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <ctype.h>
-#include <minutf8.h>
+#include "../include/minutf8.h"
 #include <pthread.h>
 
 //
@@ -45,9 +48,13 @@
 //
 #include <ft2build.h>
 #include FT_FREETYPE_H
+//#include "../include/freetype/freetype.h"
 #include FT_TRUETYPE_IDS_H
-#include <freetype/ftsynth.h>
+//#include "../include/freetype/ttnameid.h"
+
+//#include "../include/freetype/ftsynth.h"
 #include FT_GLYPH_H
+//#include "../include/freetype/ftglyph.h"
 #include "utils.h"
 
 //
@@ -361,10 +368,12 @@ byte      ag_isfreetype(byte isbig);
 byte      ag_fontready(byte isbig);
 CANVAS *  agc();          // Get Main MIUI Graph Canvas
 byte      ag_init();      // Init MIUI Graph and Framebuffers
+#ifdef BOARD_HAS_FLIPPED_SCREEN
+void gr_flip();           // flip buffer 180 degrees for devices with physically inverted screen 
+#endif
 void      ag_close_thread(); // Close Graph Thread
 void      ag_close();     // Close MIUI Graph and Framebuffers
 void      ag_changecolor(char , char, char, char); // Change Color Space
-
 void      ag_sync();                        // Sync Main Canvas with Framebuffer
 int       agw();                            // Get Display X Resolution
 int       agh();                            // Get Display Y Resolution
@@ -688,5 +697,13 @@ int file_scan(char *path, int path_len, char * title, int title_len, fileFun fun
 #endif
 #define STRINGIFY(x) #x
 #define EXPAND(x) STRINGIFY(x)
+
+#ifndef MSMFB_IOCTL_MAGIC
+#define MSMFB_IOCTL_MAGIC 'm'
+#endif
+#ifndef MSMFB_OVERLAY_VSYNC_CTRL
+#define MSMFB_OVERLAY_VSYNC_CTRL _IOW(MSMFB_IOCTL_MAGIC, 160, unsigned int)
+#endif
+
 
 #endif // __MIUI_H__

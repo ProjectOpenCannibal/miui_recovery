@@ -29,10 +29,15 @@ typedef enum _intentType{
     INTENT_BACKUP,
     INTENT_ADVANCED_BACKUP,
     INTENT_SYSTEM,
-    INTENT_COPY
+    INTENT_COPY,
+    INTENT_ROOT,
+    INTENT_RUN_ORS,
+    INTENT_BACKUP_FORMAT,
+    INTENT_SIDELOAD,
+    INTENT_SETSYSTEM 
 }intentType;
 
-#define INTENT_RESULT_LEN 16
+#define INTENT_RESULT_LEN 25
 typedef struct _intentResult{
     int ret;
     char result[INTENT_RESULT_LEN];
@@ -56,4 +61,5 @@ intentResult*  miuiIntent_result_set(int ret, char *str);
 char* miuiIntent_result_get_string();
 int miuiIntent_result_get_int();
 intentResult* intent_toggle(int argc, char *argv[]);
+
 #endif

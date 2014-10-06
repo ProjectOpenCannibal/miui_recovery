@@ -18,12 +18,15 @@
 #define RECOVERY_ROOTS_H_
 
 #include "common.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // Load and parse volume data from /etc/recovery.fstab.
 void load_volume_table();
 
 // Return the Volume* record for this path (or NULL).
-Volume* volume_for_path(const char* path);
+Volume_  *volume_for_path(const char* path);
 
 // Make sure that the volume 'path' is on is mounted.  Returns 0 on
 // success (volume is mounted).
@@ -39,9 +42,14 @@ int ensure_path_unmounted(const char* path);
 // it is mounted.
 int format_volume(const char* volume);
 
+char* get_primary_storage_path();
+char** get_extra_storage_paths();
+char* get_android_secure_path();
+void setup_legacy_storage_paths();
+int get_num_extra_volumes();
 int get_num_volumes();
 
-Volume* get_device_volumes();
+Volume_* get_device_volumes();
 
 int is_data_media();
 void setup_data_media();
@@ -52,5 +60,16 @@ int is_path_mounted(const char* path);
 
 int format_unknown_device(const char *device, const char* path, const char *fs_type);
 int format_device(const char *device, const char *path, const char *fs_type) ;
+
 int has_datadata() ;
+
+int set_active_system(int num);
+void ignore_data_media_workaround(int ignore);
+
+#define MAX_NUM_MANAGED_VOLUMES 10
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  // RECOVERY_ROOTS_H_

@@ -1,15 +1,35 @@
 LOCAL_PATH := $(call my-dir)
 
 ifneq ($(TARGET_SIMULATOR),true)
-ifeq ($(TARGET_ARCH),arm)
 
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES := flashutils.c
 LOCAL_MODULE := libflashutils
 LOCAL_MODULE_TAGS := optional
-LOCAL_C_INCLUDES += src
-LOCAL_STATIC_LIBRARIES := libmmcutils libmtdutils libbmlutils libcrecovery
+LOCAL_C_INCLUDES += bootable/recovery
+#LOCAL_STATIC_LIBRARIES := libmmcutils libmtdutils libbmlutils libcrecovery
+LOCAL_SHARED_LIBRARIES := libmmcutils libmtdutils libbmlutils 
+LOCAL_STATIC_LIBRARIES := libcrecovery
+BOARD_RECOVERY_DEFINES := BOARD_BML_BOOT BOARD_BML_RECOVERY
 
+$(foreach board_define,$(BOARD_RECOVERY_DEFINES), \
+  $(if $($(board_define)), \
+    $(eval LOCAL_CFLAGS += -D$(board_define)=\"$($(board_define))\") \
+  ) \
+  )
+
+#include $(BUILD_STATIC_LIBRARY)
+include $(BUILD_SHARED_LIBRARY)
+
+
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES := flashutils.c
+LOCAL_MODULE := libflashutils_static
+LOCAL_MODULE_TAGS := optional
+LOCAL_C_INCLUDES += src
+#LOCAL_STATIC_LIBRARIES := libmmcutils libmtdutils libbmlutils libcrecovery
+LOCAL_SHARED_LIBRARIES := libmmcutils libmtdutils libbmlutils 
+LOCAL_STATIC_LIBRARIES := libcrecovery
 BOARD_RECOVERY_DEFINES := BOARD_BML_BOOT BOARD_BML_RECOVERY
 
 $(foreach board_define,$(BOARD_RECOVERY_DEFINES), \
@@ -19,6 +39,8 @@ $(foreach board_define,$(BOARD_RECOVERY_DEFINES), \
   )
 
 include $(BUILD_STATIC_LIBRARY)
+#include $(BUILD_SHARED_LIBRARY)
+
 
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES := flash_image.c
@@ -51,21 +73,24 @@ LOCAL_SRC_FILES := flash_image.c
 LOCAL_MODULE := libflash_image
 LOCAL_MODULE_TAGS := optional
 LOCAL_CFLAGS += -Dmain=flash_image_main
-include $(BUILD_STATIC_LIBRARY)
+LOCAL_SHARED_LIBRARIES := libflashutils 
+include $(BUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES := dump_image.c
 LOCAL_MODULE := libdump_image
 LOCAL_MODULE_TAGS := optional
 LOCAL_CFLAGS += -Dmain=dump_image_main
-include $(BUILD_STATIC_LIBRARY)
+LOCAL_SHARED_LIBRARIES := libflashutils 
+include $(BUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES := erase_image.c
 LOCAL_MODULE := liberase_image
 LOCAL_MODULE_TAGS := optional
 LOCAL_CFLAGS += -Dmain=erase_image_main
-include $(BUILD_STATIC_LIBRARY)
+LOCAL_SHARED_LIBRARIES := libflashutils 
+include $(BUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES := dump_image.c
@@ -103,5 +128,4 @@ LOCAL_STATIC_LIBRARIES := libflashutils libmtdutils libmmcutils libbmlutils libc
 LOCAL_FORCE_STATIC_EXECUTABLE := true
 include $(BUILD_EXECUTABLE)
 
-endif	# TARGET_ARCH == arm
 endif	# !TARGET_SIMULATOR

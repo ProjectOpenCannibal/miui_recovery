@@ -10,7 +10,7 @@
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
+ * See the License for the specificlanguage governing permissions and
  * limitations under the License.
  */ 
 /*
@@ -27,11 +27,6 @@
 #include "../miui_inter.h"
 #include "../miui.h"
 #include "../../../miui_intent.h"
-
-#define POWER_REBOOT                 0
-#define POWER_RECOVERY               1
-#define POWER_BOOTLOADER             2
-#define POWER_POWEROFF               3
 
 static byte      ai_run              = 0;
 static int       ai_progani_pos      = 0;
@@ -132,13 +127,15 @@ done:
   if (buffer!=NULL) free(buffer);
 }
 
-void ai_reboot_device(){
+void ai_dump_logs(){
+  char dumpname[256];
   char msgtext[256];
-  snprintf(msgtext,255,"Device will be rebooted.\n\nAre you sure you want to reboot?");
+  snprintf(dumpname,255,"%s/install.log",RECOVERY_PATH);
+  snprintf(msgtext,255,"Install Log will be saved into:\n\n<#060>%s</#>\n\nAre you sure you want to save it?",dumpname);
   
   byte res = aw_confirm(
     ai_win,
-    "Reboot System",
+    "Save Install Log",
     msgtext,
     "@alert",
     NULL,
@@ -146,7 +143,15 @@ void ai_reboot_device(){
   );
   
   if (res){
-    miuiIntent_send(INTENT_REBOOT, 1, "reboot");
+    ai_actionsavelog(dumpname);
+    //rename(MIUI_INSTALL_LOG,dumpname);
+    aw_alert(
+      ai_win,
+      "Save Install Log",
+      "Install Logs has been saved...",
+      "@info",
+      NULL
+    );
   }
   
 }
@@ -155,7 +160,8 @@ static void *miui_install_package(void *cookie){
     if (pmiui_install->pfun != NULL)
     {
         //run install process
-        ret = pmiui_install->pfun(pmiui_install->path, &pmiui_install->wipe_cache, pmiui_install->install_file);
+       // ret = pmiui_install->pfun(pmiui_install->path, &pmiui_install->wipe_cache, pmiui_install->install_file);
+	ret = pmiui_install->pfun(pmiui_install->path);
         if (pmiui_install->wipe_cache)
             miuiIntent_send(INTENT_WIPE, 1 , "/cache");
         miuiInstall_set_progress(1);
@@ -371,7 +377,7 @@ void miui_init_install(
   ai_prog_w = pw-((hlfdp*2)+2);
   ai_prog_r = ai_prog_or-(1+hlfdp);
   snprintf(ai_progress_text,63,"Initializing...");
-  snprintf(ai_progress_info,100,"");
+  snprintf(ai_progress_info,100," ");
   pthread_mutex_unlock(&ai_progress_mutex);
   return ;
 }
@@ -457,7 +463,7 @@ int miui_start_install(
       // Show Dump Button
       acbutton(
         hWin,
-        pad,py,(cw/2)-(agdp()*2),ph,"Reboot System",0,
+        pad,py,(cw/2)-(agdp()*2),ph,"Save Logs",0,
         8
       );
       
@@ -469,7 +475,7 @@ int miui_start_install(
           switch(aw_gm(msg))
           {
           case 8:
-              ai_reboot_device();
+              ai_dump_logs();
               break;
           case 6:
               ondispatch = 0;
@@ -483,11 +489,11 @@ int miui_start_install(
   return WEXITSTATUS(ai_return_status);
 }
 
-STATUS miuiInstall_init(miuiInstall_fun fun, char* path, int wipe_cache, char* install_file)
+STATUS miuiInstall_init(miuiInstall_fun fun, char* path)
 {
     pmiui_install->path = path;
-    pmiui_install->wipe_cache = wipe_cache;
-    pmiui_install->install_file = install_file;
+    //pmiui_install->wipe_cache = wipe_cache;
+    //pmiui_install->install_file = install_file;
     pmiui_install->pfun = fun;
     return RET_OK;
 }

@@ -1,3 +1,4 @@
+﻿### LICENSE:
 #--- COMMON SYSTEM STRING RESOURCE
 #
 text_ok=OK
@@ -8,106 +9,167 @@ text_no=No
 text_about=About
 text_calibrating=Calibrating Tools
 text_quit=Quit
-text_quit_msg=Are you sure you want to quit?
+text_quit_msg=Are you sure to quit?
 text_done=done
 global_done=done
+text_wait=Please wait ...
+text_wait_sideload=Please send zip via "adb sideload" ...
 
 
-lang.name=Select Language
-lang.title_name=Select Language
+
+
+lang.name=选择语言/Select Language
+lang.title_name=请选择语言/Select Language
 lang.desc=lang selected
 default_name=default_name
 default_title=default_title
-default_desc=Are you sure?
+default_desc=Are you sure do it?
+
+choice.system0.name=system1
+choice.system1.name=system2
+choose.system.title=Choose system
+choose.system.text=Choose a system to perform the action.
+
 
 mainmenu.name=MAIN MENU
 mainmenu.title_name=MAIN MENU
-mainmenu.install.name=Install from SD
+mainmenu.install.name=install from SD
 mainmenu.tools.name=tools
 
 back.name=Back
 back.title_name=Back to parent menu
 
 sd.back.name=Back
-sd.back.desc=Up one level
+sd.back.desc=back to upper
 
-sd.name=ZIP Flashing
-sd.title_name=ZIP Flashing
-sd.desc=ZIP Flashing
+sd.name=install from sd
+sd.title_name=install from sd
+sd.desc=install from sd
 batt.name=BATTARY
 time.name=TIME
 
-sd.install.name=Choose ZIP from SDCard
-sdext.install.name=Choose ZIP from external SDCard
+sd.install.name=choose zip from sd
+sdext.install.name=choose zip from internal sd
 sd.update.name=apply /sdcard/update.zip
 sd.log.save=Save Logs
 
-power.name=Power
-power.title=Power Menu
-reboot.null= Reboot
-reboot.null.title= Reboot now
-reboot.recovery= Reboot Recovery
-reboot.bootloader= Reboot Bootloader
-reboot.poweroff= Power Off
+power.name=power
+power.title=power operation
+reboot.null= reboot
+reboot.null.title= reboot now
+reboot.recovery= reboot to recovery
+reboot.bootloader= reboot to bootloader
+reboot.system0=reboot to system1
+reboot.system1=reboot to system2
+reboot.poweroff= poweroff
 
 alert.result=FAIL!
-alert.desc=Operation Failed
+alert.desc=operation failed
 
-mount.name=Storage Management
-mount.title=mount and toggle USB storage
-mount.cache.name=Mount /cache
-mount.data.name=Mount /data
-mount.system.name=Mount /system
-mount.sdcard.name=Mount /sdcard
-mount.sdcard.name=Mount external SDCard
-mount.toggle.name=Mount USB Storage
+mount.name=mount
+mount.title=mount and toogle usb storage
+mount.cache.name=mount cache
+mount.data.name=mount data
+mount.system.name=mount system
+mount.system.name=mount system1 
+mount.sdcard.name=mount sdcard
+mount.toggle.name=toggle usb storage
+mount.sdext.name= mount internal sd
 
-wipe.name=Partition Management
+wipe.name=wipe or format
 wipe.title=wipe data or format partation operation
-wipe.cache.name=Wipe /cache
-wipe.dalvik-cache.name=Wipe Dalvik-Cache
-wipe.factory.name=Factory Reset
-wipe.data.name=Wipe /data
-format.system.name=Format /system
-format.data.name=Format /data
-format.cache.name=Format /cache
-format.boot.name=Format /boot
-format.sdcard.name=Format /sdcard
-format.all.name=Pre-Flash Wipe
+wipe.cache.name=wipe cache
+wipe.dalvik-cache.name=wipe dalvik-cache
+wipe.factory.name=wipe all
+wipe.data.name=wipe data
+format.system.name=format system
+format.system1.name=format system1
+format.data.name=format data
+format.cache.name=format cache
+format.boot.name=format boot
+format.boot1.name=format boot1
+format.sdcard.name=format sdcard
+format.all.name=format all(except sdcard and boot)
 
-backup.name=Backup and Restore
-backup.title=Backup and Restore from SDCARD
-backup.backup.name=Backup
-backup.restore.name=Restore
-advanced_backup.name=Advanced Backup
-advanced_backup.cache.name=Backup /cache
-advanced_backup.data.name=Backup /data
-advanced_backup.system.name=Backup /system
-advanced_backup.boot.name=Backup boot
-advanced_backup.recovery.name=Backup recovery
-advanced_restore.name=Advanced Restore
-advanced_restore.cache.name=Restore /cache
-advanced_restore.data.name=Restore /data
-advanced_restore.system.name=Restore /system
-advanced_restore.boot.name=Restore boot
-advanced_restore.recovery.name=Restore recovery
+backup.name=backup and restore
+backup.title=backup to sdcard and restore from sdcard
+backup.backup.name=backup
+backup.restore.name=restore
+advanced_backup.name=advanced backup
+advanced_backup.cache.name=backup cache
+advanced_backup.data.name=backup data
+advanced_backup.system.name=backup system
+advanced_backup.system1.name=backup system1
+advanced_backup.boot.name=backup boot
+advanced_backup.boot1.name=backup boot1
+advanced_backup.recovery.name=backup recovery
+advanced_restore.name=advanced restore
+advanced_restore.cache.name=restore cache
+advanced_restore.data.name=restore data
+advanced_restore.system.name=restore system
+advanced_restore.sys.name=restore system1
+advanced_restore.boot.name=restore boot
+advanced_restore.boot1.name=restore boot1
+advanced_restore.recovery.name=restore recovery
 
-tool.name=Tools
-tool.title=Advanced Tools
-tool.key.name=Key Test
+tool.name=advanced
+tool.title=advanced tools
+tool.key.name=key test
 tool.time.name=timer setting
-tool.battary.name=Wipe battery stats
-tool.log.name=Save log to SDCard
-tool.log.desc=Are you sure? 
-tool.permission.name=Fix Permissions
+tool.battary.name=wip battary
+tool.log.name=cope log to sdcard
+tool.log.desc=are you sure cope log to 
+tool.permission.name=fix permission
+tool.root.name= root your device 
+tool.recovery.name=disable restore rec from boot.p
+tool.sideload.name=install package via sideload
+tool.sideload.desc=package received, confirm install?
+tool.enable.tdb=enable truedualboot
+tool.disable.tdb=disable truedualboot
+tool.tdb.desc=This will wipe all data!
 
-info.name=Info
-info.title=Information about COT NG Recovery
-info.mount.name=Storage Info
-info.log.name=Log
-info.about.name=About Cannibal Open Touch NG
+
+
+info.name=info
+info.title=information of miui recovery
+info.mount.name=storage info
+info.log.name=log
+info.about.name=about miui recovery
 
 about.device=Device:
 about.name=Name:
 about.version=Version:
 about.date=Date:
+about.author=Rec Author:
+
+root.name=LaoYang toolbox
+root.title=Advantage toolbox 
+root.device=root the device 
+root.un_of_rec=Disable to restore the official recovery
+
+root.ors=Run ORS script
+root.choose.sd.ors=choose ORS script from sdcard
+root.choose.sdin.ors=choose ors from internal sd
+
+root.set.brightness=Set Brightness
+root.about.author=About Author
+
+root.free.sd.space=Free sdcard space 
+
+root.set.backup.format=Set default backup format
+
+root.enabled.md5=Enable md5 check the file
+root.disabled.md5=Disable md5 check the file
+
+root.CDI=Turn on/off device info check 
+root.CDI.on=Turn on
+root.CDI.off=Turn off
+
+root.md5sum=Turn on/off md5sum generate md5
+root.md5sum.on=Turn on
+root.md5sum.off=Turn off
+
+root.sigcheck=Sig check 
+root.dev=Dev Opt
+
+

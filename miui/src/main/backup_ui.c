@@ -9,17 +9,17 @@
 #include "../miui.h"
 #include "../../../miui_intent.h"
 
+#define TAR_FORMAT 0
+#define DUP_FORMAT 1
+#define TAR_GZ_FORMAT 2
+
 
 #define BACKUP_ALL            1
 #define BACKUP_CACHE          2
 #define BACKUP_DATA           3
 #define BACKUP_SYSTEM         4
-#define BACKUP_BOOT           5
+#define BACKUP_BOOT          5
 #define BACKUP_RECOVERY       6
-
-#define BACKUP_DELETE 17
-#define BROWSER_TYPE_RESTORE 1
-#define BROWSER_TYPE_DELETE 2
 
 #define RESTORE_ALL           11
 #define RESTORE_CACHE         12
@@ -27,26 +27,38 @@
 #define RESTORE_SYSTEM        14
 #define RESTORE_BOOT          15
 #define RESTORE_RECOVERY      16
+#ifdef DUALSYSTEM_PARTITIONS
+ #define BACKUP_SYSTEM1         17
+ #define BACKUP_BOOT1           18
+ #define RESTORE_SYSTEM1        19
+ #define RESTORE_BOOT1          20
+#endif
+
+
 
 static struct _menuUnit* p_current = NULL;
 static struct _menuUnit* backup_menu = NULL;
-static STATUS delete_backup(char* path)
-{
-	return_val_if_fail(p_current != NULL, RET_FAIL);
-	miui_busy_process();
-	switch(p_current->result) {
-		case BACKUP_DELETE:
-		{
-			char command[256];
-			snprintf(command, 256, "rm -rf %s", path);
-			miuiIntent_send(INTENT_SYSTEM, 1, command);
-		}
+//SET DEFAULT BACKUP FORMAT
+static STATUS set_default_backup_format(struct _menuUnit* p) {
+	switch (p->result) {
+		case TAR_FORMAT:
+			miuiIntent_send(INTENT_MOUNT, 1, "/sdcard");
+			miuiIntent_send(INTENT_BACKUP_FORMAT, 1, "tar");
 			break;
+		case DUP_FORMAT:
+			miuiIntent_send(INTENT_MOUNT, 1, "/sdcard");
+			miuiIntent_send(INTENT_BACKUP_FORMAT, 1, "dup");
+			break;
+		case TAR_GZ_FORMAT:
+			miuiIntent_send(INTENT_MOUNT, 1, "/sdcard");
+			miuiIntent_send(INTENT_BACKUP_FORMAT, 1, "tgz");
+			break;
+
 		default:
-			miui_error("p->resulte %d should not be the value\n", p_current->result);
+			//we should never get here!
 			break;
 	}
-	return RET_OK;
+	return MENU_BACK;
 }
 
 static STATUS backup_restore(char* path)
@@ -55,20 +67,33 @@ static STATUS backup_restore(char* path)
     miui_busy_process();
     switch(p_current->result) {
         case RESTORE_ALL:
-            miuiIntent_send(INTENT_RESTORE, 7, path, "1", "1", "1", "1", "0", "0");
+   #ifdef DUALSYSTEM_PARTITIONS 
+            miuiIntent_send(INTENT_RESTORE, 9, path, "1", "1", "1", "1", "0", "0", "1", "1");
+#else 
+            miuiIntent_send(INTENT_RESTORE, 9, path, "1", "1", "1", "1", "0", "0", "0", "0");
+#endif
+       
             break;
         case RESTORE_CACHE:
-            miuiIntent_send(INTENT_RESTORE, 7, path, "0", "0", "0", "1", "0", "0");
+            miuiIntent_send(INTENT_RESTORE, 9, path, "0", "0", "0", "1", "0", "0", "0", "0");
             break;
         case RESTORE_DATA:
-            miuiIntent_send(INTENT_RESTORE, 7, path, "0", "0", "1", "0", "0", "0");
+            miuiIntent_send(INTENT_RESTORE, 9, path, "0", "0", "1", "0", "0", "0", "0", "0");
             break;
         case RESTORE_SYSTEM:
-            miuiIntent_send(INTENT_RESTORE, 7, path, "0", "1", "0", "0", "0", "0");
+            miuiIntent_send(INTENT_RESTORE, 9, path, "0", "1", "0", "0", "0", "0", "0", "0");
            break;
         case RESTORE_BOOT:
-            miuiIntent_send(INTENT_RESTORE, 7, path, "1", "0", "0", "0", "0", "0");
+            miuiIntent_send(INTENT_RESTORE, 9, path, "1", "0", "0", "0", "0", "0", "0", "0");
             break;
+#ifdef DUALSYSTEM_PARTITIONS
+        case RESTORE_SYSTEM1:
+            miuiIntent_send(INTENT_RESTORE, 9, path, "0", "0", "0", "0", "0", "0", "0", "1");
+           break;
+        case RESTORE_BOOT1:
+            miuiIntent_send(INTENT_RESTORE, 9, path, "0", "0", "0", "0", "0", "0", "1", "0");
+            break;
+#endif
         default:
             miui_error("p->resulte %d should not be the value\n", p_current->result);
             break;
@@ -76,9 +101,9 @@ static STATUS backup_restore(char* path)
     return RET_OK;
 }
 
-static STATUS _show_backup_dir(char *path, int type)
+static STATUS _backup_dir_show(char *path)
 {
-	DIR* d;
+    DIR* d;
     struct dirent* de;
     d = opendir(path);
     return_val_if_fail(d != NULL, RET_FAIL);
@@ -172,10 +197,7 @@ static STATUS _show_backup_dir(char *path, int type)
             *nandroid_restore(backup_path, restore_boot, system, data, chache , sdext, wimax)
             */
            if (p_current != NULL && RET_YES == miui_confirm(3, p_current->name, p_current->desc, p_current->icon)) {
-				if (type == BROWSER_TYPE_RESTORE)
-					backup_restore(new_path);
-				else
-					delete_backup(new_path);
+               backup_restore(new_path);
            }
            break;
        }
@@ -189,23 +211,6 @@ static STATUS _show_backup_dir(char *path, int type)
    }
    free(zips);
    return result;
-}
-
-static STATUS backup_delete_show(menuUnit* p) {
-	p_current = p;
-	miuiIntent_send(INTENT_MOUNT, 1, "/sdcard");
-	return_val_if_fail(miuiIntent_result_get_int() == 0, MENU_BACK);
-	char path_name[PATH_MAX];
-	switch(p->result) {
-		case BACKUP_DELETE:
-			snprintf(path_name, PATH_MAX, "%s/backup/backup", RECOVERY_PATH);
-			break;
-		default:
-			miui_error("p->resulte %d should not be the value\n", p->result);
-			return MENU_BACK;
-	}
-	_show_backup_dir(path_name, BROWSER_TYPE_DELETE);
-	return MENU_BACK;
 }
 
 static STATUS restore_child_show(menuUnit* p)
@@ -230,11 +235,19 @@ static STATUS restore_child_show(menuUnit* p)
         case RESTORE_BOOT:
             snprintf(path_name,PATH_MAX, "%s/backup/boot", RECOVERY_PATH);
             break;
+#ifdef DUALSYSTEM_PARTITIONS
+        case RESTORE_SYSTEM1:
+            snprintf(path_name,PATH_MAX, "%s/backup/system1", RECOVERY_PATH);
+            break;
+        case RESTORE_BOOT1:
+            snprintf(path_name,PATH_MAX, "%s/backup/boot1", RECOVERY_PATH);
+            break;
+#endif
         default:
             miui_error("p->resulte %d should not be the value\n", p->result);
             return MENU_BACK;
     }
-    _show_backup_dir(path_name, BROWSER_TYPE_RESTORE);
+    _backup_dir_show(path_name);
     return MENU_BACK;
 }
 
@@ -281,6 +294,20 @@ static STATUS backup_child_show(menuUnit* p)
                         time_tm->tm_mon + 1, time_tm->tm_mday, time_tm->tm_hour, time_tm->tm_min);
                 miuiIntent_send(INTENT_ADVANCED_BACKUP, 2 , path_name, "/boot");
                 break;
+#ifdef DUALSYSTEM_PARTITIONS
+            case BACKUP_SYSTEM1:
+                snprintf(path_name,PATH_MAX, "%s/backup/system1/%02d%02d%02d-%02d%02d",
+                        RECOVERY_PATH, time_tm->tm_year,
+                        time_tm->tm_mon + 1, time_tm->tm_mday, time_tm->tm_hour, time_tm->tm_min);
+                miuiIntent_send(INTENT_ADVANCED_BACKUP, 2 , path_name, "/system1");
+                break;
+            case BACKUP_BOOT1:
+                snprintf(path_name,PATH_MAX, "%s/backup/boot1/%02d%02d%02d-%02d%02d",
+                        RECOVERY_PATH, time_tm->tm_year,
+                        time_tm->tm_mon + 1, time_tm->tm_mday, time_tm->tm_hour, time_tm->tm_min);
+                miuiIntent_send(INTENT_ADVANCED_BACKUP, 2 , path_name, "/boot1");
+                break;
+#endif
             default:
                 miui_error("p->resulte %d should not be the value\n", p->result);
                 break;
@@ -301,12 +328,27 @@ struct _menuUnit* advanced_backup_ui_init()
     menuUnit_set_name(temp, "<~advanced_backup.boot.name>");
     menuUnit_set_result(temp, BACKUP_BOOT);
     menuUnit_set_show(temp, &backup_child_show);
+#ifdef DUALSYSTEM_PARTITIONS
+    temp = common_ui_init();
+    assert_if_fail(menuNode_add(p, temp) == RET_OK);
+    menuUnit_set_name(temp, "<~advanced_backup.boot1.name>");
+    menuUnit_set_result(temp, BACKUP_BOOT1);
+    menuUnit_set_show(temp, &backup_child_show);
+#endif
     //backup system
     temp = common_ui_init();
     assert_if_fail(menuNode_add(p, temp) == RET_OK);
     menuUnit_set_name(temp, "<~advanced_backup.system.name>");
     menuUnit_set_result(temp, BACKUP_SYSTEM);
     menuUnit_set_show(temp, &backup_child_show);
+    #ifdef DUALSYSTEM_PARTITIONS
+    //backup system
+    temp = common_ui_init();
+    assert_if_fail(menuNode_add(p, temp) == RET_OK);
+    menuUnit_set_name(temp, "<~advanced_backup.system1.name>");
+    menuUnit_set_result(temp, BACKUP_SYSTEM1);
+    menuUnit_set_show(temp, &backup_child_show);
+#endif
     //backup data
     temp = common_ui_init();
     assert_if_fail(menuNode_add(p, temp) == RET_OK);
@@ -334,12 +376,28 @@ struct _menuUnit* advanced_restore_ui_init()
     menuUnit_set_name(temp, "<~advanced_restore.boot.name>");
     menuUnit_set_result(temp, RESTORE_BOOT);
     menuUnit_set_show(temp, &restore_child_show);
+    #ifdef DUALSYSTEM_PARTITIONS
+    //restore boot1
+    temp = common_ui_init();
+    assert_if_fail(menuNode_add(p, temp) == RET_OK);
+    menuUnit_set_name(temp, "<~advanced_restore.boot1.name>");
+    menuUnit_set_result(temp, RESTORE_BOOT1);
+    menuUnit_set_show(temp, &restore_child_show);
+#endif
     //restore system
     temp = common_ui_init();
     assert_if_fail(menuNode_add(p, temp) == RET_OK);
     menuUnit_set_name(temp, "<~advanced_restore.system.name>");
     menuUnit_set_result(temp, RESTORE_SYSTEM);
     menuUnit_set_show(temp, &restore_child_show);
+    #ifdef DUALSYSTEM_PARTITIONS
+    //restore system
+    temp = common_ui_init();
+    assert_if_fail(menuNode_add(p, temp) == RET_OK);
+    menuUnit_set_name(temp, "<~advanced_restore.sys.name>");
+    menuUnit_set_result(temp, RESTORE_SYSTEM1);
+    menuUnit_set_show(temp, &restore_child_show);
+#endif
     //restore data
     temp = common_ui_init();
     assert_if_fail(menuNode_add(p, temp) == RET_OK);
@@ -354,6 +412,36 @@ struct _menuUnit* advanced_restore_ui_init()
     menuUnit_set_show(temp, &restore_child_show);
     return p;
 }
+
+struct _menuUnit* set_backup_fromat_init() {
+	struct _menuUnit* p = common_ui_init();
+	return_null_if_fail(p != NULL);
+	menuUnit_set_name(p, "<~root.set.backup.format>");
+	menuUnit_set_title(p, "set backup format");
+	menuUnit_set_icon(p, "@root");
+	assert_if_fail(menuNode_init(p) != NULL);
+	//tar backup format
+	struct _menuUnit* temp = common_ui_init();
+	menuUnit_set_name(temp, "tar backup format");
+	menuUnit_set_show(temp, &set_default_backup_format);
+	temp->result = TAR_FORMAT;
+	assert_if_fail(menuNode_add(p, temp) == RET_OK);
+	//dup backup format
+	temp = common_ui_init();
+	menuUnit_set_name(temp, "dup backup format");
+	menuUnit_set_show(temp, &set_default_backup_format);
+	temp->result = DUP_FORMAT;
+	assert_if_fail(menuNode_add(p, temp) == RET_OK);
+	//tar.gz backup format
+	temp = common_ui_init();
+	menuUnit_set_name(temp, "tar.gz backup format");
+	menuUnit_set_show(temp, &set_default_backup_format);
+	temp->result = TAR_GZ_FORMAT;
+	assert_if_fail(menuNode_add(p, temp) == RET_OK);
+
+	return p;
+}
+
 struct _menuUnit* backup_ui_init()
 {
     struct _menuUnit *p = common_ui_init();
@@ -364,16 +452,10 @@ struct _menuUnit* backup_ui_init()
     menuUnit_set_show(p, &common_menu_show);
     return_null_if_fail(menuNode_init(p) != NULL);
     backup_menu = p;
-    struct _menuUnit* temp = common_ui_init();
-    
-    //delete standard backups
-    temp = common_ui_init();
-    assert_if_fail(menuNode_add(p, temp) == RET_OK);
-    menuUnit_set_name(temp, "Delete Backups");
-    menuUnit_set_result(temp, BACKUP_DELETE);
-    menuUnit_set_show(temp, &backup_delete_show);
-    //delete advanced backups
-    /* TODO: not implemented */
+
+    //set backup default format
+     struct _menuUnit* temp = set_backup_fromat_init();
+     assert_if_fail(menuNode_add(p, temp) == RET_OK);
     //backup
     temp = common_ui_init();
     assert_if_fail(menuNode_add(p, temp) == RET_OK);

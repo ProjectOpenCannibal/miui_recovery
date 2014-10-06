@@ -22,6 +22,15 @@
  */
 
 #include "../miui_inter.h"
+#include "../../include/ft2build.h"
+#include FT_FREETYPE_H
+#include FT_TRUETYPE_IDS_H
+#include FT_GLYPH_H
+/*
+#include <freetype/freetype.h>
+#include <freetype/ttnameid.h>
+#include <freetype/ftglyph.h>
+*/
 
 /*****************************[ GLOBAL VARIABLES ]*****************************/
 static FT_Library             aft_lib;            // Freetype Library

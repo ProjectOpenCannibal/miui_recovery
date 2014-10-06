@@ -127,7 +127,9 @@ byte apng_load(PNGCANVAS * pngcanvas,char* imgname) {
       LOGE("PNG(%s): Not Supported. Only 8 Bit Depth with 3/4 Channel or Pallete.\n",zpath);
       goto exit;
   }
+#ifdef MIUI_DEBUG_PNG
   LOGI("PNG(%s): %ix%ix%i\n",zpath,info_ptr->width,info_ptr->height,info_ptr->channels);
+#endif
   
   if (info_ptr->color_type == PNG_COLOR_TYPE_PALETTE) {
     png_set_palette_to_rgb(png_ptr);
@@ -254,8 +256,10 @@ byte apng_draw_ex(CANVAS * _b, PNGCANVAS * p, int xpos, int ypos, int sxpos, int
       ag_setpixel(_b,(x-sxpos)+xpos,(y-sypos)+ypos, ag_rgb(new_r,new_g,new_b));      
     }
   }
-  //printf("PNGDRAW: %ix%i on %ix%i\n",p->w,p->h,xpos,ypos);
-  //LOGI("PNGDRAW: %ix%i on %ix%i\n",p->w,p->h,xpos,ypos);
+#ifdef MIUI_DEBUG_PNG
+  printf("PNGDRAW: %ix%i on %ix%i\n",p->w,p->h,xpos,ypos);
+  LOGI("PNGDRAW: %ix%i on %ix%i\n",p->w,p->h,xpos,ypos);
+#endif
   free(qe);
   return 1;
 }
@@ -315,7 +319,9 @@ byte apng_loadfont(PNGFONTS * pngfont,const char* imgname) {
       LOGE("PNG FONT(%s): Not Supported. Only 8 Bit Depth with 4 Channel.\n",zpath);
       goto exit;
   }
+#ifdef MIUI_DEBUG_PNG
   LOGI("PNG(%s): %ix%ix%i\n",zpath,info_ptr->width,info_ptr->height,info_ptr->channels);
+#endif
   
   //-- Initializing Canvas
   pngfont->w    = info_ptr->width;

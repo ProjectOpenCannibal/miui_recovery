@@ -22,9 +22,7 @@
  */
 #include "../miui_inter.h"
 #include "../miui.h"
-#include "../libs/iniparser/iniparser.h"
-#include "../libs/iniparser/dictionary.h"
-
+//#include <linux/fb.h> //get the resolution of the framebuffer
 
 struct _menuUnit *g_main_menu;//main menu
 struct _menuUnit *g_root_menu;//language ui
@@ -72,9 +70,12 @@ static struct _menuUnit *tree_init()
     //add power
     assert_if_fail(menuNode_add(g_main_menu, power_ui_init()) == RET_OK);
     //add tools operation
-    assert_if_fail(menuNode_add(g_main_menu, tool_ui_init()) == RET_OK);
+    //assert_if_fail(menuNode_add(g_main_menu, tool_ui_init()) == RET_OK);
     //add info
     assert_if_fail(menuNode_add(g_main_menu, info_ui_init()) == RET_OK);
+    //add root opertion
+    assert_if_fail(menuNode_add(g_main_menu, root_ui_init()) == RET_OK);
+
 
     struct stat st;
     if (stat(RECOVERY_PATH, &st) != 0)
@@ -85,11 +86,13 @@ static struct _menuUnit *tree_init()
 }
 STATUS main_ui_init()
 {
+	/*
 #ifndef _MIUI_NODEBUG
     miui_debug("function main_ui_init enter miui debug\n");
     remove_directory("/tmp/miui-memory");
     miui_memory_debug_init();
 #endif
+*/
     miui_printf("Initializing...\n");
     remove_directory(MIUI_TMP);
     unlink(MIUI_TMP_S);
@@ -104,16 +107,22 @@ STATUS main_ui_init()
     ui_init();
     //graphic thread start, print background
     ag_init();
-
+#ifdef BOARD_HAS_FLIPPED_SCREEN
+    gr_flip();
+#endif
     //miui_ui start
     miui_ui_start();
 	//device config after miui_ui start
     miui_ui_config("/res/device.conf");
     tree_init();
 
-
-    miui_font( "0", "ttf/DroidSans.ttf;", "12" );
-    miui_font( "1", "ttf/DroidSans.ttf;", "18" );
+#ifdef BUILD_CHN_REC
+    miui_font( "0", "ttf/DroidSans.ttf;ttf/DroidSansFallback.ttf;", "12" );
+    miui_font( "1", "ttf/DroidSans.ttf;ttf/DroidSansFallback.ttf;", "18" );
+#else
+    miui_font("0", "ttf/DroidSans.ttf", "12");
+    miui_font("1", "ttf/DroidSans.ttf", "18");
+#endif
     return RET_OK;
 }
 STATUS main_ui_show()
@@ -146,10 +155,11 @@ STATUS main_ui_show()
 
 STATUS main_ui_release()
 {
-
+/*
 #ifndef _MIUI_NODEBUG
   miui_dump_malloc();
 #endif
+*/
   miui_ui_end();
   ag_close_thread();
   //clear ui tree

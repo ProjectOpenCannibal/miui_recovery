@@ -82,7 +82,7 @@ int FindExpendableFiles(char*** names, int* entries) {
 
   // We're allowed to delete unopened regular files in any of these
   // directories.
-  const char* dirs[3] = {"/cache", "/cache/download", "/cache/recovery/otatest"};
+  const char* dirs[2] = {"/cache", "/cache/recovery/otatest"};
 
   unsigned int i;
   for (i = 0; i < sizeof(dirs)/sizeof(dirs[0]); ++i) {

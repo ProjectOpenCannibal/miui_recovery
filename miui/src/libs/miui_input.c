@@ -194,7 +194,9 @@ int event_filter(char *name)
     char a= *(name + 5);//"inputn", extract n
     return_val_if_fail(a >= 0x30, 0);
     return_val_if_fail(a < 0x40, 0);
+    printf("a = %x", a);
     byte i = a - 0x30;
+    printf("i = %d",i);
     return_val_if_fail(i > 0, 0);
     return_val_if_fail(i < 32, 0);
     if((mask>>i) & 0x1) {

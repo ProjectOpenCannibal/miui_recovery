@@ -24,10 +24,31 @@
 #include <signal.h>
 #include <fcntl.h>
 #include <linux/fb.h>
+#include <linux/kd.h>
+#include "pixelflinger/pixelflinger.h"
+
 #include <sys/mman.h>
 #include <pthread.h>
 #include <math.h>
 #include "../miui_inter.h"
+
+/*****************************[RECOVERY COLOR MODE VARIABLES ] ****************/
+/*
+#ifdef RECOVERY_BGRA
+#define PIXEL_FORMAT GGL_PIXEL_FORMAT_BGRA_8888
+#define PIXEL_SIZE 4
+#endif
+#ifdef RECOVERY_RGBX
+#define PIXEL_FORMAT GGL_PIXEL_FORMAT_RGBX_8888
+#define PIXEL_SIZE 4
+#endif
+#ifndef PIXEL_FORMAT
+#define PIXEL_FORMAT GGL_PIXEL_FORMAT_RGB_565
+#define PIXEL_SIZE 2
+#endif
+*/
+#define NUM_BUFFERS 2
+
 
 
 /*****************************[ GLOBAL VARIABLES ]*****************************/
@@ -59,6 +80,42 @@ static byte                            ag_oncopybusy=0;
 /****************************[ DECLARED FUNCTIONS ]*****************************/
 static void *ag_thread(void *cookie);
 void ag_refreshrate();
+
+
+/*************************[ Flipped screen support ]***************************/
+ // sample
+ //
+ /*
+ * void gr_flip(void)
+ * {
+ *   GGLContext *gl = gr_context;
+ * 
+ *  // swap front and back buffers 
+ *   gr_active_fb = (gr_active_fb + 1) & 1;
+ *
+ * #ifdef BOARD_HAS_FLIPPED_SCREEN
+ *   // flip buffer 180 degrees for devices with physicaly inverted screens *
+ *    unsigned int i;
+ *   for (i = 1; i < (vi.xres * vi.yres); i++) {
+ *       unsigned short tmp = gr_mem_surface.data[i];
+ *       gr_mem_surface.data[i] = gr_mem_surface.data[(vi.xres * vi.yres * 2) - i];
+ *       gr_mem_surface.data[(vi.xres * vi.yres * 2) - i] = tmp;
+ *   }
+ * #endif
+ *
+ *
+ *   // copy data from the in-memory surface to the buffer we're about
+ *    * to make active. 
+ *  memcpy(gr_framebuffer[gr_active_fb].data, gr_mem_surface.data,
+ *          fi.line_length * vi.yres);
+ *
+ *  // inform the display driver 
+ *   set_active_framebuffer(gr_active_fb);
+ * }
+ *
+ */
+
+
 
 /*******************[ CALCULATING ALPHA COLOR WITH NEON ]***********************/
 dword ag_calchighlight(color c1,color c2){
@@ -196,20 +253,24 @@ int ag_changcolor(char ch1, char ch2, char ch3, char ch4)
     ag_changecolorspace(arg[0], arg[1], arg[2], arg[3]);
     return 0;
 }
-
+#ifdef DUALSYSTEM_PARTITIONS
+// only xiaomi devices have dual system and need the following code
 void ag_fb_blank(int blank)
 {
-    int ret;
 
-    ret = ioctl(ag_fb, FBIOBLANK, blank ? FB_BLANK_POWERDOWN : FB_BLANK_UNBLANK);
+   int ret;
+    ret = ioctl(ag_fb, FBIOBLANK, blank ? FB_BLANK_POWERDOWN : FB_BLANK_UNBLANK); 	
+
     if (ret < 0)
-        perror("ioctl(): blank");
+        perror("ioctl(): blank"); 	
+
 }
+#endif
 
 /*********************************[ FUNCTIONS ]********************************/
 //-- INITIALIZING AMARULLZ GRAPHIC
 byte ag_init(){
-  printf("function ag_init entry\n");
+  miui_debug("function ag_init entry\n");
   if (ag_fb>0) return 0;
   
   //-- Open Framebuffer
@@ -219,7 +280,9 @@ byte ag_init(){
     //-- Init Info from IO
     ioctl(ag_fb, FBIOGET_FSCREENINFO, &ag_fbf);
     ioctl(ag_fb, FBIOGET_VSCREENINFO, &ag_fbv);
-    
+#ifdef PIXEL_FORMAT_BGR_565
+   ag_fbv.bits_per_pixel = 16;
+#endif 
     //-- Init 32 Buffer
     ag_canvas(&ag_c,ag_fbv.xres,ag_fbv.yres);
     ag_dp = floor( min(ag_fbv.xres,ag_fbv.yres) / 160);
@@ -229,8 +292,10 @@ byte ag_init(){
     ag_fbsz  = (ag_fbv.xres * ag_fbv.yres * ((agclp==3)?4:agclp));
     
     //-- Init Frame Buffer
-    printf("ag_fbv.bits_per_pixel = %d\n", ag_fbv.bits_per_pixel);
-    if (ag_fbv.bits_per_pixel==16){
+    fprintf(stderr, "\n\nPixel format: %dx%d @ %dbpp\n\n", ag_fbv.xres, ag_fbv.yres, ag_fbv.bits_per_pixel);
+   
+
+   if (ag_fbv.bits_per_pixel==16){
      /*RGB565*/
       ag_fbv.red.offset        = 11;
       ag_fbv.red.length        = 5;
@@ -242,12 +307,17 @@ byte ag_init(){
       ag_fbv.transp.length     = 0;
       if (ioctl(ag_fb, FBIOPUT_VSCREENINFO, &ag_fbv) < 0)
       {
-          printf("failed to put fb0 info");
+          perror("failed to put fb0 info");
           close(ag_fb);
           return -1;
       }
       ag_32   = 0;
       ag_fbuf = (word*) mmap(0,ag_fbf.smem_len,PROT_READ|PROT_WRITE,MAP_SHARED,ag_fb,0);
+      if (ag_fbuf == MAP_FAILED) { //add for xiaomi 
+	      perror("failed to mmap framebuffer");
+	      close(ag_fb);
+	      return -1;
+      }
       ag_b    = (word*) malloc(ag_fbsz);
       ag_bz   = (word*) malloc(ag_fbsz);
       
@@ -288,7 +358,11 @@ byte ag_init(){
     }
     else{
       ag_32     = 1;
-      
+
+
+
+
+
       //-- Memory Allocation
       ag_fbuf32 = (byte*) mmap(0,ag_fbf.smem_len,PROT_READ|PROT_WRITE,MAP_SHARED,ag_fb,0);
       ag_bf32   = (dword*) malloc(ag_fbsz);
@@ -311,18 +385,24 @@ byte ag_init(){
         }
       }
     }
+    
+#ifdef DUALSYSTEM_PARTITIONS 
+    //Only xiaomi devices has dual system and needs the following code
+    ag_fb_blank(1);
+    ag_fb_blank(0);
+#endif
 
     //-- Refresh Draw Lock Thread
     ag_isrun = 1;
     pthread_create(&ag_pthread, NULL, ag_thread, NULL);
     
     //-- Init FreeType
-    printf("Opening Freetype\n");
+    LOGS("Opening Freetype\n");
     aft_open();
     
     return 1;
   }
-  printf("open framebuffer failed\n");
+  miui_debug("open framebuffer failed\n");
   return 0;
 }
 void ag_close_thread(){
@@ -333,12 +413,12 @@ void ag_close_thread(){
 
 //-- RELEASE AMARULLZ GRAPHIC
 void ag_close(){
-  if (ag_fbv.bits_per_pixel!=16){
+  if (ag_fbv.bits_per_pixel!=16){ //32 bit 
     if (ag_bf32!=NULL) free(ag_bf32);
     if (ag_bz32!=NULL) free(ag_bz32);
     if (ag_fbuf32!=NULL) munmap(ag_fbuf32,ag_fbsz);
   }
-  else if (ag_fbv.bits_per_pixel==16){
+  else if (ag_fbv.bits_per_pixel==16){ //16 bit
     if (ag_b!=NULL) free(ag_b);
     if (ag_bz!=NULL) free(ag_bz);
     if (ag_fbuf!=NULL) munmap(ag_fbuf,ag_fbsz);
@@ -380,6 +460,23 @@ static void *ag_thread(void *cookie){
 }
 
 
+
+// -- flip func 
+#ifdef BOARD_HAS_FLIPPED_SCREEN
+// flip buffer 180 degrees for devices with physicaly inverted screen 
+void gr_flip(void)
+{
+   
+    unsigned int i;
+    for (i = 1; i < (ag_fbv.xres * ag_fbv.yres); i++) {
+        color tmp = ag_c.data[i];
+        ag_c.data[i] = ag_c.data[(ag_fbv.xres * ag_fbv.yres * 2) - i];
+        ag_c.data[(ag_fbv.xres * ag_fbv.yres * 2) - i] = tmp;
+    }  
+}
+
+#endif
+ 
 //-- Sync Display
 void ag_copybusy(char * wait){
   CANVAS tmpc;
@@ -612,11 +709,19 @@ void ag_refreshrate(){
   ag_fbv.yoffset   = 0;
   ag_fbv.activate |= FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
   ioctl(ag_fb, FBIOPUT_VSCREENINFO, &ag_fbv);  
+#ifdef NEEDS_VSYNC 
+ int e;
+ ioctl(ag_fb, MSMFB_OVERLAY_VSYNC_CTRL, &e);
+#endif  
 }
 
 byte ag_sync_locked = 0;
 //-- Sync Display
 void ag_sync(){
+#ifdef NEEDS_VSYNC
+	int e;
+	ioctl(ag_fb, MSMFB_OVERLAY_VSYNC_CTRL, &e);
+#endif 
   //-- Always On Footer
   // ag_draw_foot();
   ag_isbusy = 0;
@@ -641,13 +746,21 @@ void ag_sync(){
   }
 }
 void ag_sync_force(){
+#ifdef NEEDS_VSYNC
+     int e;
+     ioctl(ag_fb, MSMFB_OVERLAY_VSYNC_CTRL, &e);
+#endif
   if (ag_sync_locked)
     ag_sync_locked = 0;
   else
     ag_sync();
 }
 static void *ag_sync_fade_thread(void * cookie){
-  miui_debug("pthread %s start...\n", __FUNCTION__);
+  #ifdef NEEDS_VSYNC
+    int e;
+    ioctl(ag_fb, MSMFB_OVERLAY_VSYNC_CTRL, &e);
+#endif
+   miui_debug("pthread %s start...\n", __FUNCTION__);
   int frame = (int) cookie;
   ag_isbusy = 0;
   ag_sync_locked = 1;
@@ -710,10 +823,18 @@ static void *ag_sync_fade_thread(void * cookie){
   return NULL;
 }
 void ag_sync_fade_wait(int frame){
+#ifdef NEEDS_VSYNC
+    int e;
+    ioctl(ag_fb, MSMFB_OVERLAY_VSYNC_CTRL, &e);
+#endif
   ag_sync_fade_thread((void *) frame);
   return; 
 }
 void ag_sync_fade(int frame){
+#ifdef NEEDS_VSYNC
+   int e;
+   ioctl(ag_fb, MSMFB_OVERLAY_VSYNC_CTRL, &e);
+#endif
   pthread_t threadsyncfade;
   pthread_create(&threadsyncfade,NULL, ag_sync_fade_thread, (void *) frame);
   pthread_detach(threadsyncfade);

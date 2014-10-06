@@ -173,6 +173,10 @@ exit:
     return result;
 }
 
+int res_create_display_surface(const char* name, gr_surface* pSurface) {
+	return res_create_surface(name, pSurface);
+}
+
 void res_free_surface(gr_surface surface) {
     GGLSurface* pSurface = (GGLSurface*) surface;
     if (pSurface) {

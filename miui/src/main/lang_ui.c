@@ -3,10 +3,17 @@
 static STATUS lang_menu_show(menuUnit *p)
 {
     return_val_if_fail(p != NULL, RET_FAIL);
-    miui_loadlang("langs/en.lang");
-    miui_font( "0", "ttf/DroidSans.ttf", "12" );
-    miui_font( "1", "ttf/DroidSans.ttf", "18" );
-    p->result = 1;
+#ifdef BUILD_CHN_REC
+        miui_loadlang("langs/cn.lang");
+        miui_font( "0", "ttf/DroidSansFallback.ttf;ttf/DroidSans.ttf", "12" );
+        miui_font( "1", "ttf/DroidSansFallback.ttf;ttf/DroidSans.ttf", "18" );
+	p->result = 1;
+#else
+	miui_loadlang("langs/en.lang");
+	miui_font("0", "ttf/DroidSans.ttf", "12");
+	miui_font("1", "ttf/DroidSans.ttf", "18");
+        p->result = 1;
+#endif
     return p->result;
 }
 
@@ -21,4 +28,5 @@ struct _menuUnit * lang_ui_init()
     p->show = &lang_menu_show;
     return p;
 }
+
 
